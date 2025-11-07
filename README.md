@@ -44,9 +44,9 @@ Cypher is an independent Linux-based operating system that offers a couple of no
 
 ### Manual OS installation
 #### Login 
-1. Once you boot into the OS, you will be prompted for username and password. A default user `neo` is provided with all the essential permissions already set to make the installation process easier.
+1. Once you boot into the OS, you will be prompted for username and password. A default user `neo` is provided with all the essential permissions already set to make the installation process easier. `neo` is a part of `wheel` group with sudo priviliges.
 
-2. Login by entering `neo` as the username and `cypher` as the password.
+2. Login by entering `neo` as the username and `cypher` as the password. 
 
 3. After you login successfully, try executing `hyprland` if you are using a intel device with i915 graphics driver. If not, you can continue in the tty environment for the installation process.
 
@@ -61,7 +61,7 @@ Cypher is an independent Linux-based operating system that offers a couple of no
 1. Identify your target drive: use `lsblk` or `fdisk -l` or a tool like `cfdisk`. For beginners, `cfdisk` is recommended.
 2. Start Partitioning: `fdisk /dev/sdX` (replace sdX with your drive)
 3. Create Partitions (Example Partitions):
-   - EFI Partition (`/dev/sdX1`): maybe `512MB` (Type: EFI System). Only create this if you don't have already have an EFI system. Don't create it or overwrite it.
+   - EFI Partition (`/dev/sdX1`): maybe `512MB` (Type: EFI System). Only create this if you don't already have an EFI system. Don't create or overwrite it.
    - Swap Partition (`/dev/sdX2`): Equal to your RAM (Type: Linux Swap) If it already exists, leave it as is.
    - Root Partition (`/dev/sdX3`): Remaining space (Type: Linux Filesystem)
 4. Format the partitions.
@@ -77,10 +77,11 @@ Cypher is an independent Linux-based operating system that offers a couple of no
    ```
    mount /dev/sdX3 /mnt/fs
    ```
+   Ensure `/mnt/fs` is mounted correctly before going to the next step.
 
-7. Copy the root filesystem to your drive.
+7. Copy the root filesystem to your drive. This is the crucial phase of the installation. Do it correctly.
    ```
-   rsync -aAXv --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} / /mnt/fs
+   rsync -aAXHv --progress --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} / /mnt/fs/
    ```
 
 Now you have successfully installed Cypher to your drive. 
@@ -96,7 +97,7 @@ Now you have successfully installed Cypher to your drive.
    sudo mount -vt tmpfs tmpfs /mnt/fs/run
 
    if [ -h /mnt/fs/dev/shm ]; then
-     sudo install -v -d -m 1777 /mnt/fs(realpath /dev/shm)
+     sudo install -v -d -m 1777 /mnt/fs$(realpath /dev/shm)
    else
     sudo mount -vt tmpfs -o nosuid,nodev tmpfs /mnt/fs/dev/shm
    fi
@@ -108,7 +109,7 @@ Now you have successfully installed Cypher to your drive.
    HOME=/root                 \
    TERM="xterm"                \
    PS1='(cypher chroot) \u:\w\$ ' \
-   PATH=/usr/bin:/usr/sbin     \
+   PATH=/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin \
    /bin/bash --login
    ```
 
@@ -126,19 +127,28 @@ Now you have successfully installed Cypher to your drive.
      ```
      ln -sf /usr/share/zoneinfo/Antarctica/Casey /etc/localtime
      ```
+   - Update the hardware clock
+     ```
+     hwclock --systohc
+     ```
 5. Install Bootloader and Configure GRUB
-   ```
-   grub-install --target=x86_64-efi --bootloader-id=Cypher
-   ```
+   - For UEFI Systems
+      ```
+      grub-install --target=x86_64-efi --bootloader-id=Cypher
+      ```
+   - For BIOS Systems
+      ```
+      grub-install --target=i386-pc /dev/sdX
+      ```
    - Ensure the `/etc/default/grub` file is present, if not create and edit it. You can clone this repo, and use the given file. And, run the command
      
      ```
      grub-mkconfig -o /boot/grub/grub.cfg
      ```
      
-6. Update the grub.cfg file to enable dual boot mode. You can refer the given grub.cfg file in the repo.
+7. Update the grub.cfg file to enable dual boot mode. You can refer the given grub.cfg file in the repo.
 
-7. Update the /etc/fstab file.
+8. Update the /etc/fstab file.
    ```
    genfstab -U /mnt >> /mnt/etc/fstab
    ```
@@ -147,25 +157,27 @@ Now you have successfully installed Cypher to your drive.
    blkid
    vi /mnt/install/etc/fstab
    ```
-8. You can continue using the system with the user `neo` (it's cool). But if you want to create a new user, run the essential commands for it and verify you have done it correctly.
+9. You can continue using the system with the user `neo` (it's cool). But if you want to create a new user, run the essential commands for it and verify you have done it correctly.
 
-9. Set your desired root password.
-   ```
-   passwd
-   ```
+10. Set your desired root password.
+    ```
+    passwd
+    ```
 
-10. Ensure you have set everything right.
+11. Ensure you have set everything right.
 
-11. Exit and reboot.
+12. Exit and reboot.
     ```
     exit
     umount -R /mnt
     reboot
     ```
 
-You can now start using Cypher. 
-   
-   
+You can now start using Cypher. <br>
+
+### Installing Cypher Components
+Once you've set up the system and have hyprland running, you can install Cypher's own graphical components from [Cypher-shell's Releases Page](https://github.com/Cypher-OS/Cypher-Shell/releases/tag/v1.0.0) and follow the installation guide given there. These applications weren't included in the final .iso image to ensure minimalism. 
+
    
 
    
