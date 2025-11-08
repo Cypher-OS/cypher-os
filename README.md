@@ -16,6 +16,11 @@ Cypher is an independent Linux-based operating system that offers a couple of no
    ```
    cypher.iso: OK
    ```
+   or
+   ```
+   cypher-beta.iso: OK
+   ```
+   
    You're good to go. If not, delete both the files and download them again from the official 'Releases' page.
 
 ### Prepare the installation media
@@ -26,6 +31,10 @@ Cypher is an independent Linux-based operating system that offers a couple of no
      
       ```
       sudo dd if=cypher.iso of=/dev/sdX bs=4M status=progress oflag=sync
+      ```
+      if you've downloaded the beta version,
+      ```
+      sudo dd if=cypher-beta.iso of=/dev/sdX bs=4M status=progress oflag=sync
       ```
       
    - On Windows, use a graphical tool like **BalenaEtcher** or **Rufus** by selecting the downloaded iso file as source image.
@@ -68,18 +77,35 @@ Cypher is an independent Linux-based operating system that offers a couple of no
    ```
    mkfs.ext4 /dev/sdX3     # Linux Filesystem
    ```
-   If you've downloaded the experimental version or if you want to try `tenet` you need a `btrfs` filesystem, run this command instead
+   If you've downloaded the experimental beta version, you need a `btrfs` filesystem Run this command instead
    ```
-   mkfs.btrfs /dev/sdX3
+   sudo mkfs.btrfs -L CYPHER_BASE /dev/sdX3        # Linux Filesystem
    ```
    
 6. Mount the partitions.
    ```
    mount /dev/sdX3 /mnt/fs
    ```
-   Ensure `/mnt/fs` is mounted correctly before going to the next step.
+   
+   NOTE: The following steps apply only if you've downloaded the beta version. Users who've downloaded the stable version, can proceed to the next step. <br>
+   
+   Create essential subvolumes.
+   ```
+   sudo btrfs subvolume create /mnt/fs/@
 
-7. Copy the root filesystem to your drive. This is the crucial phase of the installation. Do it correctly.
+   sudo btrfs subvolume create /mnt/fs/.snapshots
+   ```
+   Now unmount the top level filesystem,
+   ```
+   sudo umount /mnt/fs
+   ```
+   Mount the root subvolume `@`
+   ```
+   sudo mount -o subvol=@ /dev/sdX3 /mnt/fs
+   ```
+   Critical Check: Verify that /mnt/fs is now empty. If you see the directories /@ and /.snapshots, you mounted the top-level Btrfs filesystem incorrectly. Unmount and re-run the command above. <br>
+
+8. Copy the root filesystem to your partition. This is the crucial phase of the installation. Do it correctly.
    ```
    rsync -aAXHv --progress --exclude={"/dev/*","/proc/*","/sys/*","/tmp/*","/run/*","/mnt/*","/media/*","/lost+found"} / /mnt/fs/
    ```
@@ -148,32 +174,32 @@ Now you have successfully installed Cypher to your drive.
      
 7. Update the grub.cfg file to enable dual boot mode. You can refer the given grub.cfg file in the repo.
 
-8. Update the /etc/fstab file.
-   ```
-   genfstab -U /mnt >> /mnt/etc/fstab
-   ```
-   or you can do it manually,
-   ```
-   blkid
-   vi /mnt/install/etc/fstab
-   ```
-9. You can continue using the system with the user `neo` (it's cool). But if you want to create a new user, run the essential commands for it and verify you have done it correctly.
+8. You can continue using the system with the user `neo` (it's cool). But if you want to create a new user, run the essential commands for it and verify you have done it correctly.
 
-10. Set your desired root password.
+9. Set your desired root password.
     ```
     passwd
     ```
 
-11. Ensure you have set everything right.
+10. Ensure you have set everything right.
 
-12. Exit and reboot.
+11. Exit.
     ```
     exit
-    umount -R /mnt
-    reboot
+    ```
+    
+12. Update the /etc/fstab file.
+    ```
+    genfstab -U /mnt/fs >> /mnt/fs/etc/fstab
+    ```
+    
+13. Unmount and Reboot.
+    ```
+    sudo umount /mnt/fs
+    trinity reboot
     ```
 
-You can now start using Cypher. <br>
+You can now start using Cypher. <br> If the system doesn't boot properly, or if it boots into the TTY but hyprland isn't working, you might need to recompile the kernel to ensure it includes the necessary drivers and specific configuration for your graphics card (especially for complex setups like certain NVIDIA cards or very new Intel/AMD hardware).
 
 ### Installing Cypher Components
 Once you've set up the system and have hyprland running, you can install Cypher's own graphical components from [Cypher-shell's Releases Page](https://github.com/Cypher-OS/Cypher-Shell/releases/tag/v1.0.0) and follow the installation guide given there. These applications weren't included in the final .iso image to ensure minimalism. 
